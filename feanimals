@@ -1,21 +1,24 @@
--- 🎭 Custom Emote Menu (Stop ile normale döner)
+-- 🎭 FE-Style Emote Player (Silly Cars mantığı)
+-- 📌 X tuşuyla menüyü aç/kapat
+
 local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hum = char:WaitForChild("Humanoid")
 local animator = hum:FindFirstChildOfClass("Animator")
 
--- ✅ Emote listesi (kendi ID’lerini buraya yazabilirsin)
+-- ✅ Emote Anim ID'lerini buraya gir
 local Emotes = {
     ["Slithering Snake"] = "rbxassetid://105239435073356",
-    ["Snake"] = "rbxassetid://105608986322734",
-    ["Become a Shark"] = "rbxassetid://78883190006382",
-    ["Chicken Dance"] = "rbxassetid://4849493309"
+    ["Become a Shark"]   = "rbxassetid://78883190006382",
+    ["Chicken Dance"]    = "rbxassetid://4849493309"
 }
 
 -- GUI
 local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-screenGui.Name = "EmoteMenu"
+screenGui.Name = "FEEmoteMenu"
+screenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 260, 0, 250)
@@ -24,17 +27,29 @@ frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
+frame.Visible = false -- aç/kapat için kapalı başlasın
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundColor3 = Color3.fromRGB(0,200,100)
-title.Text = "🎭 Custom Emotes"
+title.Text = "🎭 FE Emote Player"
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.FredokaOne
 title.TextScaled = true
 
 -- Anim track referansı
 local currentTrack = nil
+
+-- Anim oynatma fonksiyonu
+local function playAnim(animId)
+    if currentTrack then currentTrack:Stop() end
+    local anim = Instance.new("Animation")
+    anim.AnimationId = animId
+    local track = animator:LoadAnimation(anim)
+    track.Priority = Enum.AnimationPriority.Action -- ✅ üst gövdeye uygular, yürüyüş bozulmaz
+    track:Play()
+    currentTrack = track
+end
 
 -- Buton oluşturma fonksiyonu
 local function addButton(name, animId, y)
@@ -48,15 +63,7 @@ local function addButton(name, animId, y)
     btn.TextScaled = true
 
     btn.MouseButton1Click:Connect(function()
-        if animator then
-            if currentTrack then currentTrack:Stop() end
-            local anim = Instance.new("Animation")
-            anim.AnimationId = animId
-            local track = animator:LoadAnimation(anim)
-            track.Priority = Enum.AnimationPriority.Action -- ✅ yürüme animini bozmaz
-            track:Play()
-            currentTrack = track
-        end
+        playAnim(animId)
     end)
 end
 
@@ -73,15 +80,20 @@ stopBtn.MouseButton1Click:Connect(function()
     if currentTrack then
         currentTrack:Stop()
         currentTrack = nil
-        -- 🔄 Normal animlere geri dön
-        hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
-        hum:ChangeState(Enum.HumanoidStateType.Running)
+        hum:ChangeState(Enum.HumanoidStateType.Running) -- ✅ normale dön
     end
 end)
 
--- Listeyi GUI’ye ekle
+-- Emote listesi ekle
 local i = 1
 for name,id in pairs(Emotes) do
     addButton(name, id, 30 * i)
     i = i + 1
 end
+
+-- Aç/Kapat tuşu (X)
+UIS.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.X then
+        frame.Visible = not frame.Visible
+    end
+end)
